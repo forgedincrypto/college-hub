@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}College Matches - College Hub{% endblock %}
+{% block content %}
+<div class="page-header flex-between">
+    <div>
+        <h2>College Matches</h2>
+        <p>AI-generated recommendations based on your profile and conversations</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        {% if total > 0 %}
+        <button class="btn btn-secondary" onclick="clearMatches()">Clear All</button>
+        {% endif %}
+        <button class="btn btn-primary" id="generate-btn" onclick="generateMatches()">
+            {% if total > 0 %}Regenerate{% else %}Generate Matches{% endif %}
+        </button>
+    </div>
+</div>
+
+<div id="llm-banner" class="banner banner-warning" style="display:none;">
+    Ollama is not running. Start it with <code>ollama serve</code> to enable college matching.
+</div>
+
+<div id="loading" style="display:none; text-align:center; padding: 2rem;">
+    <div class="spinner" style="width: 32px; height: 32px; border-width: 3px;"></div>
+    <p class="text-dim mt-2">Analyzing your profile and generating recommendations... This may take a minute.</p>
+</div>
+
+<div id="results">
+{% if total == 0 %}
+<div class="empty-state">
+    <div class="icon">&#9962;</div>
+    <h3>No matches yet</h3>
+    <p>Fill out your profile and grades, then click "Generate Matches" for personalized recommendations.</p>
+</div>
+{% else %}
+
+{% if grouped.reach %}
+<div class="tier-section">
+    <h3><span class="tier-badge tier-reach">Reach</span> {{ grouped.reach|length }} school{{ "s" if grouped.reach|length != 1 }}</h3>
+    {% for m in grouped.reach %}
+    <div class="college-card">
+        <div>
+            <h4>{{ m.name }}</h4>
+            <div class="meta">{{ m.location }} &middot; {{ m.size }}</div>
+            <div class="reasoning">{{ m.reasoning }}</div>
+            <button class="btn btn-sm btn-secondary mt-1" onclick="trackSchool('{{ m.name }}')">Track This School</button>
+        </div>
+        <div class="fit-score {% if m.fit_score >= 70 %}fit-high{% elif m.fit_score >= 40 %}fit-mid{% else %}fit-low{% endif %}">
+            {{ m.fit_score }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if grouped.match %}
+<div class="tier-section">
+    <h3><span class="tier-badge tier-match">Match</span> {{ grouped.match|length }} school{{ "s" if grouped.match|length != 1 }}</h3>
+    {% for m in grouped.match %}
+    <div class="college-card">
+        <div>
+            <h4>{{ m.name }}</h4>
+            <div class="meta">{{ m.location }} &middot; {{ m.size }}</div>
+            <div class="reasoning">{{ m.reasoning }}</div>
+            <button class="btn btn-sm btn-secondary mt-1" onclick="trackSchool('{{ m.name }}')">Track This School</button>
+        </div>
+        <div class="fit-score {% if m.fit_score >= 70 %}fit-high{% elif m.fit_score >= 40 %}fit-mid{% else %}fit-low{% endif %}">
+            {{ m.fit_score }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if grouped.safety %}
+<div class="tier-section">
+    <h3><span class="tier-badge tier-safety">Safety</span> {{ grouped.safety|length }} school{{ "s" if grouped.safety|length != 1 }}</h3>
+    {% for m in grouped.safety %}
+    <div class="college-card">
+        <div>
+            <h4>{{ m.name }}</h4>
+            <div class="meta">{{ m.location }} &middot; {{ m.size }}</div>
+            <div class="reasoning">{{ m.reasoning }}</div>
+            <button class="btn btn-sm btn-secondary mt-1" onclick="trackSchool('{{ m.name }}')">Track This School</button>
+        </div>
+        <div class="fit-score {% if m.fit_score >= 70 %}fit-high{% elif m.fit_score >= 40 %}fit-mid{% else %}fit-low{% endif %}">
+            {{ m.fit_score }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}
+</div>
+
+<script>
+function generateMatches() {
+    const btn = document.getElementById("generate-btn");
+    const loading = document.getElementById("loading");
+    const results = document.getElementById("results");
+
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+    loading.style.display = "block";
+    results.style.display = "none";
+
+    fetch("/colleges/generate", { method: "POST" })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                alert("Error: " + data.error);
+                loading.style.display = "none";
+                results.style.display = "block";
+                btn.disabled = false;
+                btn.textContent = "Generate Matches";
+            } else {
+                location.reload();
+            }
+        })
+        .catch(err => {
+            alert("Failed to generate matches. Is Ollama running?");
+            loading.style.display = "none";
+            results.style.display = "block";
+            btn.disabled = false;
+            btn.textContent = "Generate Matches";
+        });
+}
+
+function clearMatches() {
+    if (!confirm("Remove all college matches?")) return;
+    fetch("/colleges/clear", { method: "POST" })
+        .then(() => location.reload());
+}
+
+function trackSchool(name) {
+    fetch("/colleges/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+    })
+    .then(r => r.json())
+    .then(() => showFlash(name + " added to tracker!"));
+}
+</script>
+{% endblock %}

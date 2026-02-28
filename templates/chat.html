@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}AI Chat - College Hub{% endblock %}
+{% block content %}
+<div class="page-header flex-between">
+    <div>
+        <h2>Chat with Sage</h2>
+        <p>Your AI college counselor &mdash; ask anything about colleges and admissions</p>
+    </div>
+</div>
+
+<div id="llm-banner" class="banner banner-warning" style="display:none;">
+    Ollama is not running. Start it with <code>ollama serve</code> to enable AI chat.
+</div>
+
+<div class="chat-layout">
+    <!-- Conversation list -->
+    <div class="chat-sidebar">
+        <button class="btn btn-primary" style="width:100%" onclick="newConversation()">+ New Chat</button>
+        <div class="chat-list" id="chat-list">
+            {% for c in conversations %}
+            <div class="chat-list-item" data-id="{{ c.id }}" onclick="loadConversation({{ c.id }})">
+                <span class="chat-title">{{ c.title }}</span>
+                <button class="btn-icon" onclick="event.stopPropagation(); deleteConversation({{ c.id }})">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Chat area -->
+    <div class="chat-main">
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-empty" id="chat-empty">
+                <div>
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">&#9993;</div>
+                    <p>Select a conversation or start a new one.<br>
+                    Sage will help you explore your college options.</p>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Ask Sage anything about colleges..."
+                   onkeydown="if(event.key==='Enter') sendMessage()" disabled>
+            <button class="btn btn-primary" id="send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

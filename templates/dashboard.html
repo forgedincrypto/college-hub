@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - College Hub{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Your college application overview at a glance</p>
+</div>
+
+<div class="stats-grid">
+    <div class="card">
+        <div class="card-title">Unweighted GPA</div>
+        <div class="card-value">{{ "%.2f"|format(stats.gpa.unweighted) }}</div>
+        <div class="text-sm text-dim mt-1">{{ stats.course_count }} course{{ "s" if stats.course_count != 1 }}</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Weighted GPA</div>
+        <div class="card-value">{{ "%.2f"|format(stats.gpa.weighted) }}</div>
+        <div class="text-sm text-dim mt-1">
+            {% if stats.gpa.weighted > stats.gpa.unweighted %}
+                +{{ "%.2f"|format(stats.gpa.weighted - stats.gpa.unweighted) }} from AP/Honors
+            {% else %}
+                Add AP/Honors courses for a boost
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Test Scores</div>
+        <div class="card-value">
+            {% if stats.sat_score %}SAT {{ stats.sat_score }}
+            {% elif stats.act_score %}ACT {{ stats.act_score }}
+            {% else %}&mdash;{% endif %}
+        </div>
+        <div class="text-sm text-dim mt-1">
+            {% if stats.sat_score and stats.act_score %}
+                ACT: {{ stats.act_score }}
+            {% elif not stats.sat_score and not stats.act_score %}
+                Add scores on the Grades page
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Profile Complete</div>
+        <div class="card-value">{{ stats.profile_pct }}%</div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ stats.profile_pct }}%"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">College Matches</div>
+        <div class="card-value">{{ stats.match_count }}</div>
+        <div class="text-sm text-dim mt-1">
+            {% if stats.match_count > 0 %}
+                {{ stats.reach_count }} reach &middot; {{ stats.match_tier_count }} match &middot; {{ stats.safety_count }} safety
+            {% else %}
+                Generate matches on the Colleges page
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Applications</div>
+        <div class="card-value">{{ stats.app_count }}</div>
+        <div class="text-sm text-dim mt-1">
+            {% if stats.app_count > 0 %}
+                Track progress on the Tracker page
+            {% else %}
+                Start tracking on the Tracker page
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if stats.upcoming_deadlines %}
+<div class="card">
+    <div class="card-title">Upcoming Deadlines</div>
+    <table>
+        <thead>
+            <tr>
+                <th>School</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in stats.upcoming_deadlines %}
+            <tr>
+                <td>{{ app.college_name }}</td>
+                <td>{{ app.deadline }}</td>
+                <td>
+                    <span class="status-badge status-{{ app.status|lower|replace(' ', '') }}">
+                        {{ app.status }}
+                    </span>
+                </td>
+                <td class="text-dim">{{ app.app_type }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if stats.course_count == 0 and stats.profile_pct < 25 %}
+<div class="card">
+    <div class="card-title">Getting Started</div>
+    <div style="line-height: 1.7; font-size: 0.9rem;">
+        <p><strong>1.</strong> Head to <a href="/grades">Grades</a> and enter your courses and test scores</p>
+        <p><strong>2.</strong> Fill out your <a href="/profile">Profile</a> with interests and preferences</p>
+        <p><strong>3.</strong> Chat with <a href="/chat">Sage</a>, your AI college counselor</p>
+        <p><strong>4.</strong> Generate personalized <a href="/colleges">College Matches</a></p>
+        <p><strong>5.</strong> Track your progress in the <a href="/tracker">Application Tracker</a></p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

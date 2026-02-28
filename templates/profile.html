@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Profile - College Hub{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Student Profile</h2>
+    <p>Tell us about yourself so we can find your best-fit colleges</p>
+</div>
+
+<form method="POST" action="/profile/save">
+    <!-- Basic Info -->
+    <div class="card">
+        <div class="card-title">Basic Information</div>
+        <div class="form-row">
+            <div>
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" value="{{ profile.name or '' }}" placeholder="Your name" style="width:100%">
+            </div>
+            <div>
+                <label for="high_school">High School</label>
+                <input type="text" id="high_school" name="high_school" value="{{ profile.high_school or '' }}" placeholder="School name" style="width:100%">
+            </div>
+            <div>
+                <label for="grad_year">Graduation Year</label>
+                <input type="number" id="grad_year" name="grad_year" value="{{ profile.grad_year or '' }}" placeholder="e.g. 2027" style="width:100%">
+            </div>
+        </div>
+    </div>
+
+    <!-- Academic Interests -->
+    <div class="card">
+        <div class="card-title">Academic Interests</div>
+        <div class="form-group">
+            <label for="major_interests">What subjects or majors interest you?</label>
+            <textarea id="major_interests" name="major_interests" style="width:100%"
+                      placeholder="e.g. Computer Science, Engineering, Business, Biology...">{{ profile.major_interests or '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="extracurriculars">Extracurricular Activities</label>
+            <textarea id="extracurriculars" name="extracurriculars" style="width:100%"
+                      placeholder="e.g. Varsity soccer (captain), Robotics club, volunteer at food bank, part-time job...">{{ profile.extracurriculars or '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- College Preferences -->
+    <div class="card">
+        <div class="card-title">College Preferences</div>
+        <div class="form-row">
+            <div>
+                <label for="location_pref">Location Preference</label>
+                <select id="location_pref" name="location_pref" style="width:100%">
+                    <option value="">-- Select --</option>
+                    <option value="No Preference" {% if profile.location_pref == "No Preference" %}selected{% endif %}>No Preference</option>
+                    <option value="Northeast" {% if profile.location_pref == "Northeast" %}selected{% endif %}>Northeast</option>
+                    <option value="Southeast" {% if profile.location_pref == "Southeast" %}selected{% endif %}>Southeast</option>
+                    <option value="Midwest" {% if profile.location_pref == "Midwest" %}selected{% endif %}>Midwest</option>
+                    <option value="Southwest" {% if profile.location_pref == "Southwest" %}selected{% endif %}>Southwest</option>
+                    <option value="West Coast" {% if profile.location_pref == "West Coast" %}selected{% endif %}>West Coast</option>
+                    <option value="Anywhere in US" {% if profile.location_pref == "Anywhere in US" %}selected{% endif %}>Anywhere in US</option>
+                    <option value="Close to Home" {% if profile.location_pref == "Close to Home" %}selected{% endif %}>Close to Home</option>
+                </select>
+            </div>
+            <div>
+                <label for="size_pref">School Size</label>
+                <select id="size_pref" name="size_pref" style="width:100%">
+                    <option value="">-- Select --</option>
+                    <option value="No Preference" {% if profile.size_pref == "No Preference" %}selected{% endif %}>No Preference</option>
+                    <option value="Small (under 5,000)" {% if profile.size_pref == "Small (under 5,000)" %}selected{% endif %}>Small (under 5,000)</option>
+                    <option value="Medium (5,000-15,000)" {% if profile.size_pref == "Medium (5,000-15,000)" %}selected{% endif %}>Medium (5,000-15,000)</option>
+                    <option value="Large (15,000+)" {% if profile.size_pref == "Large (15,000+)" %}selected{% endif %}>Large (15,000+)</option>
+                </select>
+            </div>
+            <div>
+                <label for="setting_pref">Campus Setting</label>
+                <select id="setting_pref" name="setting_pref" style="width:100%">
+                    <option value="">-- Select --</option>
+                    <option value="No Preference" {% if profile.setting_pref == "No Preference" %}selected{% endif %}>No Preference</option>
+                    <option value="Urban" {% if profile.setting_pref == "Urban" %}selected{% endif %}>Urban / City</option>
+                    <option value="Suburban" {% if profile.setting_pref == "Suburban" %}selected{% endif %}>Suburban</option>
+                    <option value="Rural" {% if profile.setting_pref == "Rural" %}selected{% endif %}>Rural / College Town</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div>
+                <label for="budget">Budget / Financial Aid Needs</label>
+                <select id="budget" name="budget" style="width:100%">
+                    <option value="">-- Select --</option>
+                    <option value="Not a concern" {% if profile.budget == "Not a concern" %}selected{% endif %}>Not a concern</option>
+                    <option value="Prefer affordable options" {% if profile.budget == "Prefer affordable options" %}selected{% endif %}>Prefer affordable options</option>
+                    <option value="Need significant financial aid" {% if profile.budget == "Need significant financial aid" %}selected{% endif %}>Need significant financial aid</option>
+                    <option value="Need full scholarship" {% if profile.budget == "Need full scholarship" %}selected{% endif %}>Need full scholarship</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="important_factors">What's most important to you in a college?</label>
+            <textarea id="important_factors" name="important_factors" style="width:100%"
+                      placeholder="e.g. Strong engineering program, good campus culture, research opportunities, Greek life, sports...">{{ profile.important_factors or '' }}</textarea>
+        </div>
+    </div>
+
+    <!-- Additional -->
+    <div class="card">
+        <div class="card-title">Anything Else?</div>
+        <div class="form-group">
+            <label for="additional_notes">Additional notes for your college search</label>
+            <textarea id="additional_notes" name="additional_notes" style="width:100%"
+                      placeholder="Anything else you'd like to note about your college preferences or background...">{{ profile.additional_notes or '' }}</textarea>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="margin-bottom: 2rem;">Save Profile</button>
+</form>
+{% endblock %}

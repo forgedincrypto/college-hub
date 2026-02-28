@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Application Tracker - College Hub{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Application Tracker</h2>
+    <p>Track your college applications, deadlines, and materials</p>
+</div>
+
+<!-- Add Application -->
+<div class="card">
+    <div class="card-title">Add Application</div>
+    <form method="POST" action="/tracker/add">
+        <div class="form-row">
+            <div style="flex: 2;">
+                <label for="college_name">College Name</label>
+                <input type="text" id="college_name" name="college_name" required placeholder="e.g. University of Michigan" style="width:100%">
+            </div>
+            <div>
+                <label for="deadline">Deadline</label>
+                <input type="date" id="deadline" name="deadline" style="width:100%">
+            </div>
+            <div>
+                <label for="app_type">Application Type</label>
+                <select id="app_type" name="app_type" style="width:100%">
+                    <option value="Regular Decision">Regular Decision</option>
+                    <option value="Early Action">Early Action</option>
+                    <option value="Early Decision">Early Decision</option>
+                    <option value="Early Decision II">Early Decision II</option>
+                    <option value="Rolling">Rolling</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Application List -->
+{% if applications %}
+<div class="card" style="overflow-x: auto;">
+    <table>
+        <thead>
+            <tr>
+                <th>School</th>
+                <th>Type</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Essay</th>
+                <th>LORs</th>
+                <th>Materials</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in applications %}
+            <tr id="app-{{ app.id }}">
+                <td><strong>{{ app.college_name }}</strong></td>
+                <td class="text-sm">{{ app.app_type }}</td>
+                <td class="text-sm">{{ app.deadline or '---' }}</td>
+                <td>
+                    <select class="status-select" data-id="{{ app.id }}" data-field="status"
+                            onchange="updateApp(this)" style="padding: 0.2rem 0.4rem; font-size: 0.78rem;">
+                        {% for s in ['Researching', 'Applying', 'Submitted', 'Accepted', 'Denied', 'Waitlisted', 'Deferred'] %}
+                        <option value="{{ s }}" {% if app.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <select data-id="{{ app.id }}" data-field="essay_status"
+                            onchange="updateApp(this)" style="padding: 0.2rem 0.4rem; font-size: 0.78rem;">
+                        {% for s in ['Not Started', 'Drafting', 'Revising', 'Done'] %}
+                        <option value="{{ s }}" {% if app.essay_status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" min="0" max="10" value="{{ app.lor_count }}" style="width: 50px; padding: 0.2rem 0.4rem; font-size: 0.78rem;"
+                           data-id="{{ app.id }}" data-field="lor_count" onchange="updateApp(this)">
+                </td>
+                <td style="font-size: 0.78rem;">
+                    <label style="display:inline; margin-right: 0.5rem;">
+                        <input type="checkbox" data-id="{{ app.id }}" data-field="transcript_sent"
+                               {% if app.transcript_sent %}checked{% endif %} onchange="updateApp(this)"> Transcript
+                    </label>
+                    <label style="display:inline; margin-right: 0.5rem;">
+                        <input type="checkbox" data-id="{{ app.id }}" data-field="test_scores_sent"
+                               {% if app.test_scores_sent %}checked{% endif %} onchange="updateApp(this)"> Scores
+                    </label>
+                    <label style="display:inline;">
+                        <input type="checkbox" data-id="{{ app.id }}" data-field="financial_aid"
+                               {% if app.financial_aid %}checked{% endif %} onchange="updateApp(this)"> FAFSA
+                    </label>
+                </td>
+                <td>
+                    <button class="btn-icon" onclick="deleteApp({{ app.id }})" title="Remove">&times;</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="icon">&#9745;</div>
+    <h3>No applications tracked yet</h3>
+    <p>Add schools above, or go to <a href="/colleges">College Matches</a> and click "Track This School"</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tracker.js') }}"></script>
+{% endblock %}

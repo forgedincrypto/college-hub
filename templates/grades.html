@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Grades - College Hub{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2>Grades & Test Scores</h2>
+    <p>Track your courses and calculate your GPA</p>
+</div>
+
+<!-- GPA Summary -->
+<div class="stats-grid">
+    <div class="card">
+        <div class="card-title">Unweighted GPA</div>
+        <div class="card-value">{{ "%.3f"|format(gpa.unweighted) }}</div>
+    </div>
+    <div class="card">
+        <div class="card-title">Weighted GPA</div>
+        <div class="card-value">{{ "%.3f"|format(gpa.weighted) }}</div>
+    </div>
+    <div class="card">
+        <div class="card-title">Total Courses</div>
+        <div class="card-value">{{ courses|length }}</div>
+    </div>
+</div>
+
+<!-- Test Scores -->
+<div class="card">
+    <div class="card-title">Test Scores</div>
+    <form method="POST" action="/grades/scores">
+        <div class="form-row">
+            <div>
+                <label for="sat_score">SAT Score (400-1600)</label>
+                <input type="number" id="sat_score" name="sat_score" min="400" max="1600"
+                       value="{{ profile.sat_score or '' }}" placeholder="e.g. 1350">
+            </div>
+            <div>
+                <label for="act_score">ACT Score (1-36)</label>
+                <input type="number" id="act_score" name="act_score" min="1" max="36"
+                       value="{{ profile.act_score or '' }}" placeholder="e.g. 30">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary">Save Scores</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Upload Transcript -->
+<div class="card">
+    <div class="card-title">Upload Transcript</div>
+    <p class="text-dim text-sm mb-1">Upload a PDF or DOCX transcript to auto-import your courses using AI.</p>
+    <div class="form-row" style="align-items:flex-end">
+        <div style="flex:2">
+            <label for="transcript-file">Transcript File (PDF or DOCX, max 10MB)</label>
+            <input type="file" id="transcript-file" accept=".pdf,.docx" style="width:100%">
+        </div>
+        <div>
+            <button type="button" id="upload-btn" class="btn btn-primary" onclick="uploadTranscript()">Upload &amp; Parse</button>
+        </div>
+    </div>
+    <div id="upload-status" style="display:none" class="mt-1"></div>
+    <div id="review-section" style="display:none" class="mt-2">
+        <div class="flex-between mb-1">
+            <span class="card-title" style="margin:0">Review Parsed Courses</span>
+            <div class="gap-1" style="display:flex">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleAllRows()">Toggle All</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="importSelected()">Import Selected</button>
+            </div>
+        </div>
+        <table id="review-table">
+            <thead>
+                <tr>
+                    <th style="width:40px"><input type="checkbox" id="select-all" checked onchange="toggleAllRows(this.checked)"></th>
+                    <th>Course</th>
+                    <th>Grade</th>
+                    <th>Year</th>
+                    <th>Type</th>
+                    <th>Credits</th>
+                </tr>
+            </thead>
+            <tbody id="review-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Course -->
+<div class="card">
+    <div class="card-title">Add Course</div>
+    <form method="POST" action="/grades/add">
+        <div class="form-row">
+            <div style="flex: 2;">
+                <label for="name">Course Name</label>
+                <input type="text" id="name" name="name" required placeholder="e.g. AP English Literature" style="width:100%">
+            </div>
+            <div>
+                <label for="grade">Grade</label>
+                <select id="grade" name="grade" required style="width:100%">
+                    <option value="A+">A+</option>
+                    <option value="A" selected>A</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B">B</option>
+                    <option value="B-">B-</option>
+                    <option value="C+">C+</option>
+                    <option value="C">C</option>
+                    <option value="C-">C-</option>
+                    <option value="D+">D+</option>
+                    <option value="D">D</option>
+                    <option value="D-">D-</option>
+                    <option value="F">F</option>
+                </select>
+            </div>
+            <div>
+                <label for="year">Year</label>
+                <select id="year" name="year" required style="width:100%">
+                    <option value="Freshman">Freshman</option>
+                    <option value="Sophomore">Sophomore</option>
+                    <option value="Junior" selected>Junior</option>
+                    <option value="Senior">Senior</option>
+                </select>
+            </div>
+            <div>
+                <label for="course_type">Type</label>
+                <select id="course_type" name="course_type" style="width:100%">
+                    <option value="Regular">Regular</option>
+                    <option value="Honors">Honors</option>
+                    <option value="AP">AP</option>
+                    <option value="IB">IB</option>
+                    <option value="Dual Enrollment">Dual Enrollment</option>
+                </select>
+            </div>
+            <div>
+                <label for="credits">Credits</label>
+                <input type="number" id="credits" name="credits" value="1.0" step="0.5" min="0.5" max="2" style="width:100%">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Course</button>
+    </form>
+</div>
+
+<!-- Course List -->
+<div class="card">
+    <div class="card-title">Your Courses</div>
+    {% if courses %}
+    <table>
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Grade</th>
+                <th>Year</th>
+                <th>Type</th>
+                <th>Credits</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in courses %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td><strong>{{ c.grade }}</strong></td>
+                <td>{{ c.year }}</td>
+                <td>
+                    {% if c.course_type in ['AP', 'IB'] %}
+                        <span class="tier-badge tier-reach">{{ c.course_type }}</span>
+                    {% elif c.course_type == 'Honors' %}
+                        <span class="tier-badge tier-match">{{ c.course_type }}</span>
+                    {% elif c.course_type == 'Dual Enrollment' %}
+                        <span class="tier-badge tier-safety">{{ c.course_type }}</span>
+                    {% else %}
+                        {{ c.course_type }}
+                    {% endif %}
+                </td>
+                <td>{{ c.credits }}</td>
+                <td>
+                    <form method="POST" action="/grades/delete/{{ c.id }}" style="display:inline"
+                          onsubmit="return confirm('Remove this course?')">
+                        <button type="submit" class="btn-icon" title="Remove">&times;</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">&#9733;</div>
+        <h3>No courses yet</h3>
+        <p>Add your courses above to calculate your GPA</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const GRADES = ["A+","A","A-","B+","B","B-","C+","C","C-","D+","D","D-","F"];
+const YEARS = ["Freshman","Sophomore","Junior","Senior"];
+const TYPES = ["Regular","Honors","AP","IB","Dual Enrollment"];
+
+function makeSelect(options, selected) {
+    return '<select class="review-edit">' +
+        options.map(o => `<option value="${o}"${o===selected?' selected':''}>${o}</option>`).join('') +
+        '</select>';
+}
+
+function uploadTranscript() {
+    const fileInput = document.getElementById('transcript-file');
+    const status = document.getElementById('upload-status');
+    const reviewSection = document.getElementById('review-section');
+    const btn = document.getElementById('upload-btn');
+
+    if (!fileInput.files.length) {
+        status.style.display = 'block';
+        status.className = 'mt-1 banner banner-warning';
+        status.textContent = 'Please select a file first.';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Parsing...';
+    status.style.display = 'block';
+    status.className = 'mt-1 banner banner-info';
+    status.textContent = 'Extracting text and parsing with AI... This may take a moment.';
+    reviewSection.style.display = 'none';
+
+    fetch('/grades/upload', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.textContent = 'Upload & Parse';
+            if (data.error) {
+                status.className = 'mt-1 banner banner-warning';
+                status.textContent = data.error;
+                return;
+            }
+            status.className = 'mt-1 banner banner-success';
+            status.textContent = `Found ${data.courses.length} course(s). Review below and click "Import Selected".`;
+            renderReviewTable(data.courses);
+            reviewSection.style.display = 'block';
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.textContent = 'Upload & Parse';
+            status.className = 'mt-1 banner banner-warning';
+            status.textContent = 'Upload failed. Please try again.';
+        });
+}
+
+function renderReviewTable(courses) {
+    const tbody = document.getElementById('review-body');
+    document.getElementById('select-all').checked = true;
+    tbody.innerHTML = courses.map((c, i) =>
+        `<tr>
+            <td><input type="checkbox" class="row-check" data-idx="${i}" checked></td>
+            <td><input type="text" class="review-edit review-name" value="${c.name.replace(/"/g,'&quot;')}" data-idx="${i}"></td>
+            <td>${makeSelect(GRADES, c.grade)}</td>
+            <td>${makeSelect(YEARS, c.year)}</td>
+            <td>${makeSelect(TYPES, c.course_type)}</td>
+            <td><input type="number" class="review-edit" value="${c.credits}" step="0.5" min="0.5" max="2" style="width:70px"></td>
+        </tr>`
+    ).join('');
+}
+
+function toggleAllRows(checked) {
+    if (typeof checked === 'undefined') {
+        const box = document.getElementById('select-all');
+        checked = box.checked;
+    }
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = checked);
+}
+
+function importSelected() {
+    const rows = document.querySelectorAll('#review-body tr');
+    const courses = [];
+    rows.forEach(row => {
+        const cb = row.querySelector('.row-check');
+        if (!cb || !cb.checked) return;
+        const cells = row.querySelectorAll('td');
+        courses.push({
+            name: cells[1].querySelector('input').value.trim(),
+            grade: cells[2].querySelector('select').value,
+            year: cells[3].querySelector('select').value,
+            course_type: cells[4].querySelector('select').value,
+            credits: parseFloat(cells[5].querySelector('input').value) || 1.0,
+        });
+    });
+
+    if (!courses.length) {
+        alert('No courses selected for import.');
+        return;
+    }
+
+    fetch('/grades/import', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({courses}),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert('Import error: ' + data.error);
+            return;
+        }
+        window.location.reload();
+    })
+    .catch(() => alert('Import failed. Please try again.'));
+}
+</script>
+{% endblock %}
