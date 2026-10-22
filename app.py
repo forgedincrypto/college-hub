@@ -2,6 +2,7 @@ import sys, json
 sys.stdout.reconfigure(encoding="utf-8")
 
 import os
+import re
 import tempfile
 
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for
@@ -11,6 +12,26 @@ import transcript
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB upload limit
+
+
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "[::1]"}
+
+
+@app.before_request
+def block_cross_site():
+    """This app has no login and is meant for localhost. Refuse requests that
+    come from other websites open in the same browser (CSRF), and DNS-rebinding
+    requests that name a foreign host."""
+    host = re.sub(r":\d+$", "", request.host.lower())
+    if host not in LOCAL_HOSTS:
+        return "Host not allowed", 403
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        site = request.headers.get("Sec-Fetch-Site")
+        if site and site != "same-origin":
+            return "Cross-site request refused", 403
+        origin = request.headers.get("Origin")
+        if origin and origin.split("://", 1)[-1].lower() != request.host.lower():
+            return "Cross-site request refused", 403
 
 
 @app.before_request
@@ -326,4 +347,5 @@ def llm_status():
 if __name__ == "__main__":
     db.init_db()
     print("College Application Hub running at http://localhost:5000")
-    app.run(debug=True, port=5000)
+    # Debug mode exposes the Werkzeug console; opt in with FLASK_DEBUG=1
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1", host="127.0.0.1", port=5000)
